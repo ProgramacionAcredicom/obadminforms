@@ -4,7 +4,7 @@ function getUUIDFromURL() {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get("uuid");
 }
-const uuid = getUUIDFromURL();
+
 
 let userMock = {};
 async function fetchUserData(uuid) {
@@ -27,24 +27,18 @@ async function fetchUserData(uuid) {
         location: userData.location,
         form_req: userData.form_req || [],
       };
-
-      console.log(userMock);
       window.userMock = userMock;
 
       initialize();
       setTimeout(() => {
-        app.style.display = "block"; // Mostrar el contenido de 'app' después de 1 ms
+        app.style.display = "block";
       }, 1);
     }
   } catch (error) {
+    const errorMessage = error.response.data.error;
     app.style.display = "block";
-    if (error.response && error.response.data.code === "401") {
-      const errorMessage = error.response.data.error; // Acceder al mensaje de error
-      renderErrorPage(errorMessage); // Mostrar el mensaje de error
-    } else {
-      message = "No se ha encontrado respuesta a la solicitud";
-      renderErrorPage(message);
-    }
+    renderErrorPage(errorMessage);
+
   }
 }
 
@@ -183,26 +177,28 @@ function loadQuestion() {
   const question = forms[currentForm].questions[currentQuestion];
 
   // Verificar si la pregunta es de tipo "pdf"
-  if (question.type === "img") {
+  if (question.type === "pdf") {
     elements.questionSection.innerHTML = `
                 <div class="bg-blue-50 p-4 rounded-lg">
                     <p class="text-blue-900 text-lg font-regular mb-2">${question.text}</p>
-                    <embed src="./W8BEN.pdf" width="100%" height="600px" type="application/pdf" title="Documento PDF" />
+                    <iframe src="${question.src || './W8BEN.pdf'}" width="100%" height="600px" style="border: none;"></iframe>
                 </div>
             `;
 
     // Agregar evento al checkbox
     const termsCheckbox = document.getElementById("terms-checkbox");
-    termsCheckbox.addEventListener("change", () => {
-      const pdfContainer = document.getElementById("pdf-container");
-      if (termsCheckbox.checked) {
-        pdfContainer.style.display = "block"; // Mostrar el PDF
-        elements.btnSiguiente.disabled = false; // Habilitar el botón "Siguiente"
-      } else {
-        pdfContainer.style.display = "none"; // Ocultar el PDF
-        elements.btnSiguiente.disabled = true; // Deshabilitar el botón "Siguiente"
-      }
-    });
+    if (termsCheckbox) {
+        termsCheckbox.addEventListener("change", () => {
+            const pdfContainer = document.getElementById("pdf-container");
+            if (termsCheckbox.checked) {
+                pdfContainer.style.display = "block"; // Mostrar el PDF
+                elements.btnSiguiente.disabled = false; // Habilitar el botón "Siguiente"
+            } else {
+                pdfContainer.style.display = "none"; // Ocultar el PDF
+                elements.btnSiguiente.disabled = true; // Deshabilitar el botón "Siguiente"
+            }
+        });
+    }
   } else {
     const questionHTML = generateQuestionHTML(question);
     elements.questionSection.innerHTML = `
@@ -244,9 +240,7 @@ function generateQuestionHTML(question) {
   if (question.type === "radio") {
     return `
                 <div class="bg-blue-50 p-4 rounded-lg">
-                    <p class="text-[#00457C] text-lg font-regular">${
-                      question.text
-                    }</p>
+                    <p class="text-[#00457C] text-lg font-regular">${question.text}</p>
                 </div>
                 <div class="flex gap-4 mt-4">
                     ${question.options
@@ -258,13 +252,10 @@ function generateQuestionHTML(question) {
                             ? "checked"
                             : ""
                         }>
-                            <div class="text-center p-3 rounded-lg border-2 text-gray-400 peer-checked:bg-green-500 transition duration-300 peer-checked:text-white">
+                            <div class="text-center p-3 rounded-lg border-2 text-gray-400 peer-checked:bg-green-500 transition duration-300 peer-checked:text-white ${
+                          answers[currentForm]?.[currentQuestion] === option ?  "bg-white text-gray-400" : "bg-white text-gray-400"
+                        }">
                                 <span class="font-semibold flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="white" />
-                                        <circle cx="12" cy="12" r="6" class="hidden peer-checked:block" fill="green" />
-                                        <circle cx="12" cy="12" r="3" class="hidden peer-checked:block" fill="white" />
-                                    </svg>
                                     ${option}
                                 </span>
                             </div>
@@ -315,11 +306,11 @@ function generateQuestionHTML(question) {
                     </div>
                 </div>
             `;
-  } else if (question.type === "img") {
+  } else if (question.type === "pdf") {
     return `
                 <div class="bg-blue-50 p-4 rounded-lg">
                     <p class="text-[#00457C] text-lg font-regular mb-2">${question.text}</p>
-                    <img src="./w9+.png" width="100%" height="600px" style="border: none;" alt="Imagen" />
+                    <iframe src="${question.src || './W8BEN.pdf'}" width="100%" height="600px" style="border: none;"></iframe>
                 </div>
             `;
   } else if (question.type === "date") {
@@ -397,11 +388,34 @@ function toggleButtonVisibility() {
     currentQuestion === forms[currentForm].questions.length - 1;
   if (elements.btnSiguiente) {
     elements.btnSiguiente.style.display = "flex";
-    elements.btnSiguiente.textContent =
-      esUltimoFormulario && esUltimaPregunta ? "Finalizar" : "Siguiente";
+    elements.btnSiguiente.innerHTML = `
+      Siguiente
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6l6 6-6 6" />
+      </svg>
+    `;
+    
+    // Cambiar clase si el botón está seleccionado
+    if (elements.btnSiguiente.classList.contains('selected')) {
+      elements.btnSiguiente.classList.remove('selected');
+    } else {
+      elements.btnSiguiente.classList.add('selected');
+    }
   }
   if (currentForm > 0 || currentQuestion > 0) {
     elements.btnAnterior.style.display = "flex";
+    elements.btnAnterior.innerHTML = `
+      Anterior
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 18l-6-6 6-6" />
+      </svg>
+    `;
+    // Cambiar clase si el botón está seleccionado
+    if (elements.btnAnterior.classList.contains('selected')) {
+      elements.btnAnterior.classList.remove('selected');
+    } else {
+      elements.btnAnterior.classList.add('selected');
+    }
   } else {
     elements.btnAnterior.style.display = "none";
   }
@@ -554,8 +568,13 @@ function resetForm() {
   elements.signatureSection.style.display = "none";
   elements.btnSiguiente.style.display = "flex";
   elements.btnAnterior.style.display = "none";
-  btnAnteriorSignature.style.display = "none";
-  elements.btnSiguiente.textContent = "Siguiente";
+  btnAnteriorSignature.style.display = "none";  
+  elements.btnSiguiente.innerHTML = `
+    Siguiente
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6l6 6-6 6" />
+    </svg>
+  `;
   loadForm();
   signaturePad.clear();
 }
@@ -596,20 +615,24 @@ function handleInputChange(event) {
   if (currentQuestionType === "radio") {
     if (target.type === "radio") {
       updateAnswer(target.value);
+      elements.btnSiguiente.classList.remove('selected');
     }
   } else if (currentQuestionType === "input") {
     if (target.type === "text") {
       updateAnswer(target.value);
+      elements.btnSiguiente.classList.remove('selected');
     }
   } else if (currentQuestionType === "terms") {
     if (target.id === "terms-checkbox") {
       const isChecked = target.checked;
       updateAnswer(isChecked ? "Acepto" : "");
+      elements.btnSiguiente.classList.remove('selected');
     }
   } else if (currentQuestionType === "terms-micoopeEnLinea") {
     if (target.id === "terms-checkbox") {
       const isChecked = target.checked;
       updateAnswer(isChecked ? "Acepto" : "");
+      elements.btnSiguiente.classList.remove('selected');
     }
   }
 }

@@ -11,9 +11,11 @@ export const forms = [
     },
     {
         form_no: 1,
-        title: "Liberacion de desponsabilidad",
+        title: "Liberación de responsabilidad",
         questions: [
-            { text: "Por favor, lea y acepte los términos y condiciones para continuar.", type: "terms" }
+            { text: "Por favor, lea y acepte los términos y condiciones para continuar.", type: "terms" },
+            { text: "Por favor, descargue y revise el siguiente PDF:", type: "pdf" }
         ]
     }
+    
 ]; 
