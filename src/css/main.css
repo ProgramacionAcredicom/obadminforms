@@ -1,0 +1,32 @@
+@keyframes gradient-animation {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+body {
+    animation: gradient-animation 15s ease infinite;
+    background: linear-gradient(90deg, #b4d6ec, #03A6A6, #b4e3df, #c2dfb4, #F2F2F2);
+    background-size: 400% 400%;
+    animation: gradient-animation 15s ease infinite;
+    font-family: 'Poppins', sans-serif;
+    color: #024873;
+}
+/* Asegurarse de que el contenedor principal ocupe el 100% de la altura */
+#app {
+    max-width: 1200px; /* Ajusta el ancho máximo según sea necesario */
+    margin: 0 auto; /* Centra el contenedor */
+    border-radius: 15px; /* Bordes redondeados */
+    overflow: hidden; /* Asegura que el contenido no sobresalga */
+}
+@media (max-width: 640px) {
+    #app {
+        padding: 1rem; /* Añadir padding en pantallas pequeñas */
+    }
+}
