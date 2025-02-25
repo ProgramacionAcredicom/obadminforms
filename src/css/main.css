@@ -16,7 +16,7 @@ body {
     background-size: 400% 400%;
     animation: gradient-animation 15s ease infinite;
     font-family: 'Poppins', sans-serif;
-    color: #00457C;
+    color: #024873;
 }
 /* Asegurarse de que el contenedor principal ocupe el 100% de la altura */
 #app {

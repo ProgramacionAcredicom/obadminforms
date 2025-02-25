@@ -1,6 +1,6 @@
 export const forms = [  
     {
-        form_no: 0,
+        type_form: 1,
         title: "Cuestionario ley FACTA",
         questions: [
             { text: "¿Es ciudadano de los Estados Unidos de América?", type: "radio", options: ["Si", "No"] },
@@ -10,11 +10,18 @@ export const forms = [
         ]
     },
     {
-        form_no: 1,
+        type_form: 2,
         title: "Liberación de responsabilidad",
         questions: [
             { text: "Por favor, lea y acepte los términos y condiciones para continuar.", type: "terms" },
-            { text: "Por favor, descargue y revise el siguiente PDF:", type: "pdf" }
+
+        ]
+    },
+    {
+        type_form: 3,
+        title: "Micoope en linea",
+        questions: [
+            { text: "Por favor, lea y acepte los términos y condiciones para continuar.", type: "terms-micoopeEnLinea" },
         ]
     }
     
