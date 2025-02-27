@@ -25,7 +25,9 @@ async function fetchUserData(uuid) {
         location: userData.location,
         fatca_registros: userData.fatca_registros || [], // Guardamos el array completo
         form_req: userData.fatca_registros.map((registro) => registro.type_form) || [],
+        date: userData.date,
         files: userData.files || [],
+       
       };
       window.userMock = userMock;
 
