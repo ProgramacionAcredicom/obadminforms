@@ -23,6 +23,19 @@ export const forms = [
         questions: [
             { text: "Por favor, lea y acepte los términos y condiciones para continuar.", type: "terms-micoopeEnLinea" },
         ]
+    }, 
+    {
+        type_form: 4,
+        title: "W9",
+        questions: [
+            { text: "Por favor, lea y acepte los términos y condiciones para continuar.", type: "pdf" },
+        ]
+    },
+    {
+        type_form: 5,
+        title: "W9",
+        questions: [
+            { text: "Por favor, lea y acepte los términos y condiciones para continuar.", type: "pdf" },
+        ]
     }
-    
 ]; 
