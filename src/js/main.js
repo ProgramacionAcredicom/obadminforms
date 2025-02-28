@@ -12,7 +12,7 @@ async function fetchUserData(uuid) {
 
   try {
     const response = await axios.get(
-      `https://backend-develop-8a00.up.railway.app/api/annexes/get-fatca-forms-by-uuid/${uuid}/`
+      `https://backend-develop-8a00.up.railway.app/api/annexes/get-form-by-uuid/${uuid}/`
     );
 
     if (response.status === 200) {
@@ -23,14 +23,14 @@ async function fetchUserData(uuid) {
         dpi: userData.dpi,
         id_asociado: userData.id_asociado,
         location: userData.location,
-        fatca_registros: userData.fatca_registros || [], // Guardamos el array completo
-        form_req: userData.fatca_registros.map((registro) => registro.type_form) || [],
+        fatca_registros: userData.form_registros || [], 
+        form_req: userData.form_registros.map((registro) => registro.type_form) || [],
         date: userData.date,
         files: userData.files || [],
        
       };
       window.userMock = userMock;
-
+      
       initialize();
       setTimeout(() => {
         app.style.display = "block";
@@ -554,9 +554,11 @@ function handleSubmitForms() {
   });
    axios
      .put(
-       "https://backend-develop-8a00.up.railway.app/api/annexes/update-fatca-forms/",
+       "https://backend-develop-8a00.up.railway.app/api/annexes/update-form/",
        data
      )
+
+     
      .then((response) => {
        Swal.fire({
          icon: "success",
