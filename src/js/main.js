@@ -386,7 +386,6 @@ function updateAnswer(value) {
   }
   answers[form.type_form][currentQuestion] = value;
   guardarDatosLocalStorage();
-  checkNextButton();
 }
 
 // Verificar si el botón "Siguiente" debe estar habilitado
@@ -580,6 +579,15 @@ function hideSignatureSection() {
   btnAnteriorSignature.style.display = "none";
 }
 
+// Función para manejar el estado del botón siguiente
+function toggleSubmitButton(disabled) {
+  if (elements.btnSiguiente) {
+    elements.btnSiguiente.disabled = disabled;
+    elements.btnSiguiente.style.opacity = disabled ? '0.5' : '1';
+    elements.btnSiguiente.style.cursor = disabled ? 'not-allowed' : 'pointer';
+  }
+}
+
 // Manejar el envío de formularios y firmas
 function handleSubmitForms() {
   const formulariosFiltrados = filtrarFormularios();
@@ -595,6 +603,9 @@ function handleSubmitForms() {
     }
   }
 
+  // Deshabilitar el botón al iniciar el envío
+  toggleSubmitButton(true);
+
   const data = {
     usuario: {
       uuid_bankingly: userMock.uuid,
@@ -603,39 +614,51 @@ function handleSubmitForms() {
   };
 
   formulariosFiltrados.forEach((form, index) => {
-    data.forms[form.type_form] = {
-      respuestas: answers,
-      firma: {
-        [form.type_form]: signatures[index] || ""
-      },
-      type_form: form.type_form
+    const formNumber = form.type_form;
+    data.forms[formNumber] = {
+      respuestas: {},
+      firma: {},
+      type_form: formNumber
     };
-  });
-   axios
-     .put(
-       "https://backend-develop-8a00.up.railway.app/api/annexes/update-form/",
-       data
-     )
 
-     
-     .then((response) => {
-       Swal.fire({
-         icon: "success",
-         title: "¡Éxito!",
-         text: "Respuestas y firmas guardadas correctamente.",
-         confirmButtonText: "Aceptar",
-       }).then(() => {
-         location.reload(); // Recargar la página al aceptar
-       })
-       // Limpiar el Local Storage
-       localStorage.removeItem("answers");
-       localStorage.removeItem("signatures")
-       // Reiniciar el formulario
-       resetForm();
-     })
-     .catch((error) => {
-       handleAxiosError(error);
-     });
+    // Agregar respuestas
+    if (answers[form.type_form]) {
+      Object.keys(answers[form.type_form]).forEach(key => {
+        data.forms[formNumber].respuestas[key] = answers[form.type_form][key];
+      });
+    }
+
+    // Agregar firma
+    if (signatures[index]) {
+      data.forms[formNumber].firma[formNumber] = signatures[index];
+    }
+  });
+
+  axios
+    .put(
+      "https://backend-develop-8a00.up.railway.app/api/annexes/update-form/",
+      data
+    )
+    .then((response) => {
+      Swal.fire({
+        icon: "success",
+        title: "¡Éxito!",
+        text: "Respuestas y firmas guardadas correctamente.",
+        confirmButtonText: "Aceptar",
+      }).then(() => {
+      location.reload(); // Recargar la página al aceptar
+      });
+      // Limpiar el Local Storage
+      localStorage.removeItem("answers");
+      localStorage.removeItem("signatures");
+      // Reiniciar el formulario
+      resetForm();
+    })
+    .catch((error) => {
+      handleAxiosError(error);
+      // Rehabilitar el botón en caso de error
+      toggleSubmitButton(false);
+    });
 }
 
 function handleAxiosError(error) {
@@ -739,35 +762,37 @@ function setupEventListeners() {
 // Manejar cambios en los inputs
 function handleInputChange(event) {
   const target = event.target;
-  const currentQuestionType = forms[currentForm].questions[currentQuestion].type;
+  const formulariosFiltrados = filtrarFormularios();
+  const form = formulariosFiltrados[currentForm];
+  const currentQuestionType = form.questions[currentQuestion].type;
 
   if (currentQuestionType === "radio") {
     if (target.type === "radio") {
       updateAnswer(target.value);
-      elements.btnSiguiente.classList.remove("selected");
+      checkNextButton();
     }
   } else if (currentQuestionType === "input") {
     if (target.type === "text") {
       updateAnswer(target.value);
-      elements.btnSiguiente.classList.remove("selected");
+      checkNextButton();
     }
   } else if (currentQuestionType === "terms") {
     if (target.id === "terms-checkbox") {
       const isChecked = target.checked;
       updateAnswer(isChecked ? "Acepto" : "");
-      elements.btnSiguiente.classList.remove("selected");
+      checkNextButton();
     }
   } else if (currentQuestionType === "terms-micoopeEnLinea") {
     if (target.id === "terms-checkbox") {
       const isChecked = target.checked;
       updateAnswer(isChecked ? "Acepto" : "");
-      elements.btnSiguiente.classList.remove("selected");
+      checkNextButton();
     }
   } else if (currentQuestionType === "pdf") {
     if (target.id === "pdf-terms-checkbox") {
       const isChecked = target.checked;
       updateAnswer(isChecked ? "Acepto" : "");
-      elements.btnSiguiente.classList.remove("selected");
+      checkNextButton();
     }
   }
 }
@@ -834,12 +859,9 @@ const style = document.createElement('style');
 style.textContent = `
   #btn-siguiente {
     transition: all 0.3s ease;
-  }
-  #btn-siguiente.selected {
-    background-color: #56A632;
+    background-color: #024873;
   }
   #btn-siguiente:not(.selected) {
-    background-color: #024873;
     opacity: 0.8;
   }
   #btn-siguiente:hover {
