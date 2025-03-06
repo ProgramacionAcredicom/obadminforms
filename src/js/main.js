@@ -248,6 +248,33 @@ function loadQuestion() {
         inputField.value = respuesta;
       }
     }
+
+    // Agregar event listeners después de renderizar el HTML
+    if (question.type === "terms" || question.type === "terms-micoopeEnLinea") {
+      const termsCheckbox = document.getElementById("terms-checkbox");
+      if (termsCheckbox) {
+        termsCheckbox.checked = answers[form.type_form]?.[currentQuestion] === "Acepto";
+        termsCheckbox.addEventListener("change", (event) => {
+          updateAnswer(event.target.checked ? "Acepto" : "");
+        });
+      }
+    } else if (question.type === "radio") {
+      const radioButtons = document.getElementsByName(
+        `question-${form.type_form}-${currentQuestion}`
+      );
+      radioButtons.forEach((rb) => {
+        rb.addEventListener("change", (event) => {
+          updateAnswer(event.target.value);
+        });
+      });
+    } else if (question.type === "input") {
+      const inputField = elements.questionSection.querySelector("input");
+      if (inputField) {
+        inputField.addEventListener("input", (event) => {
+          updateAnswer(event.target.value);
+        });
+      }
+    }
   }
 
   elements.signatureSection.style.display = "none";
@@ -369,10 +396,14 @@ function checkNextButton() {
   const currentQuestionType = form.questions[currentQuestion].type;
   const hasAnswer = answers[form.type_form]?.[currentQuestion];
 
-  if (currentQuestionType === "terms" || currentQuestionType === "terms-micoopeEnLinea" || currentQuestionType === "pdf") {
-    elements.btnSiguiente.disabled = !hasAnswer || hasAnswer !== "Acepto";
-  } else {
-    elements.btnSiguiente.disabled = !hasAnswer;
+  // Remover la clase disabled y agregar la clase selected si hay respuesta
+  if (elements.btnSiguiente) {
+    elements.btnSiguiente.classList.remove('disabled');
+    if (hasAnswer) {
+      elements.btnSiguiente.classList.add('selected');
+    } else {
+      elements.btnSiguiente.classList.remove('selected');
+    }
   }
 }
 
@@ -386,6 +417,7 @@ function handleNextClick() {
   // Verificar si la pregunta actual tiene respuesta
   if (!hasAnswer) {
     let mensajeError = "";
+    let icono = 'warning';
     
     // Personalizar mensaje según el tipo de pregunta
     if (currentQuestionType === "radio") {
@@ -394,17 +426,25 @@ function handleNextClick() {
       mensajeError = "Por favor, complete el campo requerido para continuar.";
     } else if (currentQuestionType === "terms" || currentQuestionType === "terms-micoopeEnLinea") {
       mensajeError = "Por favor, acepte los términos y condiciones para continuar.";
+      icono = 'info';
     } else if (currentQuestionType === "pdf") {
       mensajeError = "Por favor, acepte los términos del documento para continuar.";
+      icono = 'info';
     }
 
     // Mostrar alerta con SweetAlert2
     Swal.fire({
-      icon: 'warning',
+      icon: icono,
       title: '¡Atención!',
       text: mensajeError,
       confirmButtonText: 'Aceptar',
-      confirmButtonColor: '#024873'
+      confirmButtonColor: '#024873',
+      showClass: {
+        popup: 'animate__animated animate__fadeInDown'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__fadeOutUp'
+      }
     });
     return;
   }
@@ -481,20 +521,37 @@ function toggleButtonVisibility() {
 
 // Inicializar SignaturePad
 function initializeSignaturePad() {
-  signaturePad = new SignaturePad(signaturePadCanvas, {
-    backgroundColor: "rgba(255, 255, 255, 0)",
-    penColor: "rgb(0, 0, 0)",
-  });
+  if (signaturePad) {
+    signaturePad.clear();
+    signaturePad.off();
+  }
+  
+  const canvas = document.getElementById("signature-pad");
+  if (canvas) {
+    signaturePad = new SignaturePad(canvas, {
+      backgroundColor: "rgba(255, 255, 255, 0)",
+      penColor: "rgb(0, 0, 0)",
+      minWidth: 0.5,
+      maxWidth: 2.5,
+      throttle: 16
+    });
+  }
 }
 
 // Mostrar la sección de firma
 function showSignatureSection() {
   elements.questionSection.style.display = "none";
   elements.btnSiguiente.style.display = "none";
-  elements.btnAnterior.style.display = "none"; // Ocultar botón "Anterior" principal
+  elements.btnAnterior.style.display = "none";
   elements.signatureSection.style.display = "block";
-  btnAnteriorSignature.style.display = "flex"; // Mostrar botón "Anterior" de firma
-  cargarFirmaSiExiste();
+  btnAnteriorSignature.style.display = "flex";
+  
+  // Reinicializar el canvas y cargar firma existente
+  setTimeout(() => {
+    initializeSignaturePad();
+    cargarFirmaSiExiste();
+    resizeCanvas();
+  }, 100);
 }
 
 // Cargar firma existente si la hay
@@ -503,10 +560,12 @@ function cargarFirmaSiExiste() {
     const img = new Image();
     img.src = signatures[currentForm];
     img.onload = () => {
-      signaturePad.clear();
-      signaturePad.fromDataURL(img.src);
+      if (signaturePad) {
+        signaturePad.clear();
+        signaturePad.fromDataURL(img.src);
+      }
     };
-  } else {
+  } else if (signaturePad) {
     signaturePad.clear();
   }
 }
@@ -518,7 +577,7 @@ function hideSignatureSection() {
   elements.btnSiguiente.style.display = "flex";
   elements.btnAnterior.style.display =
     currentForm > 0 || currentQuestion > 0 ? "flex" : "none";
-  btnAnteriorSignature.style.display = "none"; // Ocultar botón "Anterior" de firma
+  btnAnteriorSignature.style.display = "none";
 }
 
 // Manejar el envío de formularios y firmas
@@ -732,21 +791,31 @@ const container = document.getElementById("signature-container");
 
 // Función para ajustar el tamaño del canvas al tamaño del contenedor
 function resizeCanvas() {
-  // Obtener el tamaño del contenedor
-  const containerWidth = container.clientWidth;
-  const containerHeight = container.clientHeight;
+  const container = document.getElementById("signature-container");
+  const canvas = document.getElementById("signature-pad");
+  
+  if (container && canvas) {
+    // Obtener el tamaño del contenedor
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
 
-  // Ajustar el tamaño del canvas al tamaño del contenedor
-  canvas.width = containerWidth * window.devicePixelRatio;
-  canvas.height = containerHeight * window.devicePixelRatio;
+    // Ajustar el tamaño del canvas al tamaño del contenedor
+    canvas.width = containerWidth * window.devicePixelRatio;
+    canvas.height = containerHeight * window.devicePixelRatio;
 
-  // Ajustar el tamaño del estilo del canvas
-  canvas.style.width = containerWidth + "px";
-  canvas.style.height = containerHeight + "px";
+    // Ajustar el tamaño del estilo del canvas
+    canvas.style.width = containerWidth + "px";
+    canvas.style.height = containerHeight + "px";
 
-  // Escalar el contexto 2D para alta resolución
-  const context = canvas.getContext("2d");
-  context.scale(window.devicePixelRatio, window.devicePixelRatio);
+    // Escalar el contexto 2D para alta resolución
+    const context = canvas.getContext("2d");
+    context.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+    // Redibujar la firma si existe
+    if (signaturePad && signatures[currentForm]) {
+      cargarFirmaSiExiste();
+    }
+  }
 }
 
 // Llamar a la función para ajustar el tamaño del canvas al cargar la página
@@ -759,3 +828,22 @@ window.addEventListener("resize", resizeCanvas);
 document.getElementById("clear-signature").addEventListener("click", () => {
   signaturePad.clear();
 });
+
+// Agregar estilos CSS para el botón siguiente
+const style = document.createElement('style');
+style.textContent = `
+  #btn-siguiente {
+    transition: all 0.3s ease;
+  }
+  #btn-siguiente.selected {
+    background-color: #56A632;
+  }
+  #btn-siguiente:not(.selected) {
+    background-color: #024873;
+    opacity: 0.8;
+  }
+  #btn-siguiente:hover {
+    opacity: 1;
+  }
+`;
+document.head.appendChild(style);
