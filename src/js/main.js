@@ -12,7 +12,7 @@ async function fetchUserData(uuid) {
 
   try {
     const response = await axios.get(
-      `https://backend-develop-8a00.up.railway.app/api/annexes/get-form-by-uuid/${uuid}/`
+      `https://obback.mcenlinea.com/api/annexes/get-form-by-uuid/${uuid}/`
     );
 
     if (response.status === 200) {
@@ -636,7 +636,7 @@ function handleSubmitForms() {
 
   axios
     .put(
-      "https://backend-develop-8a00.up.railway.app/api/annexes/update-form/",
+      "https://obback.mcenlinea.com/api/annexes/update-form/",
       data
     )
     .then((response) => {
