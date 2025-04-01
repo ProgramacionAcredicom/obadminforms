@@ -12,7 +12,7 @@ async function fetchUserData(uuid) {
 
   try {
     const response = await axios.get(
-      `https://backend-develop-8a00.up.railway.app/api/annexes/get-form-by-uuid/${uuid}/ `
+      `https://obback.mcenlinea.com/api/annexes/get-form-by-uuid/${uuid}/ `
     );
 
     if (response.status === 200) {
@@ -52,11 +52,11 @@ function renderErrorPage(message) {
   }
   app.innerHTML = `
         <div class="flex items-center justify-center min-h-screen bg-blanco oscuro:bg-gris-900">
-                <div class="py-8 px-4 mx-auto max-w-screen-sm sm:max-w-screen-md md:max-w-screen-lg lg:max-w-screen-xl lg:py-16 lg:px-6">
-                    <img src="./src/img/error.svg" alt="Descripción de la imagen" class="w-3/4 h-auto rounded-lg mx-auto">
+                <div class="py-4 px-2 mx-auto max-w-screen-sm sm:max-w-screen-md md:max-w-screen-lg lg:max-w-screen-xl lg:py-16 lg:px-2">
+                    <img src="./src/img/alert.svg" alt="Descripción de la imagen" class="w-3/4 h-auto rounded-lg mx-auto">
                     <div class="mx-auto max-w-screen-sm text-center">
-                        <p class="mb-4 text-2xl sm:text-3xl md:text-4xl tracking-tight font-bold text-[#024873]">Ups! Algo salió mal.</p>
-                        <p class="mb-4 text-base sm:text-lg font-light text-gray-500 dark:text-gray-400">Error: ${message}</p>
+                        <p class="mb-4 text-2xl sm:text-3xl md:text-4xl tracking-tight font-bold text-[#024873]">Información</p>
+                        <p class="mb-4 text-base sm:text-lg font-light text-gray-500 dark:text-gray-400"> ${message}</p>
                        <button id="retry-button" class="w-full bg-[#024873] text-white py-3 rounded-lg font-medium flex items-center justify-center">Reintentar</button>
                     </div>
                 </div>
@@ -605,7 +605,6 @@ function handleSubmitForms() {
     }
   }
 
-  // Deshabilitar el botón al iniciar el envío
   toggleSubmitButton(true);
 
   const data = {
@@ -623,45 +622,41 @@ function handleSubmitForms() {
       type_form: formNumber
     };
 
-    // Agregar respuestas
     if (answers[form.type_form]) {
       Object.keys(answers[form.type_form]).forEach(key => {
         data.forms[formNumber].respuestas[key] = answers[form.type_form][key];
       });
     }
 
-    // Agregar firma
     if (signatures[index]) {
       data.forms[formNumber].firma[formNumber] = signatures[index];
     }
   });
 
   axios
-    .put(
-      "https://backend-develop-8a00.up.railway.app/api/annexes/update-form/",
-      data
-    )
+    .put("https://obback.mcenlinea.com/api/annexes/update-form/", data)
     .then((response) => {
       Swal.fire({
         icon: "success",
         title: "¡Éxito!",
-        text: "Respuestas y firmas guardadas correctamente.",
+        text: "Respuestas y firmas guardadas correctamente. Presiona aceptar para salir",
         confirmButtonText: "Aceptar",
-      }).then(() => {
-      location.reload(); // Recargar la página al aceptar
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Solo recarga si el usuario confirma
+          localStorage.removeItem("answers");
+          localStorage.removeItem("signatures");
+          resetForm();
+          location.reload();
+        }
       });
-      // Limpiar el Local Storage
-      localStorage.removeItem("answers");
-      localStorage.removeItem("signatures");
-      // Reiniciar el formulario
-      resetForm();
     })
     .catch((error) => {
       handleAxiosError(error);
-      // Rehabilitar el botón en caso de error
       toggleSubmitButton(false);
     });
 }
+
 
 function handleAxiosError(error) {
   let errorMessage =
